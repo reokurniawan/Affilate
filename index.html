@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFFILIATE.ID - TikTok Affiliate Platform</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        tiktok: {
+                            pink: '#FE2C55',
+                            cyan: '#25F4EE',
+                            dark: '#121212',
+                            card: '#1E1E1E',
+                            border: '#2F2F2F'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #121212; color: #f3f4f6; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="min-h-screen bg-[#121212] flex flex-col selection:bg-tiktok-pink selection:text-white">
+
+    <!-- Toast Notification Modal (Custom Alert) -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-y-[-200%] transition-transform duration-300 bg-[#1E1E1E] border border-[#2F2F2F] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-tiktok-cyan text-lg"></i>
+        <div>
+            <h4 id="toast-title" class="font-bold text-sm">Notifikasi</h4>
+            <p id="toast-msg" class="text-xs text-gray-400"></p>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#1E1E1E] border border-[#2F2F2F] w-full max-w-md rounded-2xl p-6 shadow-2xl">
+            <h3 id="confirm-title" class="text-lg font-bold text-white mb-2">Konfirmasi Aksi</h3>
+            <p id="confirm-text" class="text-sm text-gray-300 mb-6">Apakah Anda yakin ingin melanjutkan?</p>
+            <div class="flex space-x-3">
+                <button id="confirm-cancel" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl font-medium text-sm transition">Batal</button>
+                <button id="confirm-ok" class="flex-1 bg-tiktok-pink hover:bg-opacity-90 text-white py-2.5 rounded-xl font-medium text-sm transition">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QRIS Modal -->
+    <div id="qris-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-[#1E1E1E] border border-[#2F2F2F] w-full max-w-sm rounded-2xl p-6 shadow-2xl text-center relative">
+            <button onclick="closeQrisModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-lg font-bold text-white mb-1">Scan QRIS Deposit</h3>
+            <p class="text-xs text-gray-400 mb-4">Scan QRIS di bawah ini untuk melakukan pembayaran</p>
+            <div class="bg-white p-4 rounded-xl inline-block mb-4">
+                <img id="qris-image-display" src="https://placehold.co/250x250/121212/FFFFFF?text=QRIS+Admin" alt="QRIS" class="w-48 h-48 object-cover rounded-lg mx-auto">
+            </div>
+            <p id="qris-amount-display" class="text-sm font-semibold text-tiktok-cyan mb-4">Nominal: Rp 0</p>
+            <button onclick="confirmDepositSubmit()" class="w-full bg-tiktok-pink hover:bg-opacity-90 text-white py-3 rounded-xl font-bold text-sm transition shadow-lg shadow-tiktok-pink/30">Saya Sudah Membayar</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app" class="flex-1 flex flex-col max-w-md mx-auto w-full bg-[#121212] relative shadow-2xl border-x border-[#2F2F2F]">
+
+        <!-- HEADER -->
+        <header class="sticky top-0 z-40 bg-[#121212]/90 backdrop-blur-md border-b border-[#2F2F2F] px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-tiktok-pink to-tiktok-cyan flex items-center justify-center text-white font-black text-lg shadow-md shadow-tiktok-pink/20">A</div>
+                <span class="font-black text-lg tracking-wider bg-gradient-to-r from-white via-gray-200 to-tiktok-cyan bg-clip-text text-transparent">AFFILIATE<span class="text-tiktok-pink">.ID</span></span>
+            </div>
+            <div id="header-right-actions" class="flex items-center space-x-3">
+                <!-- Dynamic Auth / User Quick info -->
+            </div>
+        </header>
+
+        <!-- DYNAMIC CONTENT AREA -->
+        <main id="main-content" class="flex-1 pb-20">
+            <!-- Content injected via JS -->
+        </main>
+
+        <!-- BOTTOM NAVIGATION (Member View) -->
+        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-[#1E1E1E]/95 backdrop-blur-md border-t border-[#2F2F2F] px-6 py-2.5 flex justify-between items-center z-40 hidden">
+            <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center text-tiktok-pink transition">
+                <i class="fa-solid fa-house text-lg mb-0.5"></i>
+                <span class="text-[10px] font-medium">Beranda</span>
+            </button>
+            <button onclick="switchTab('catalog')" id="nav-catalog" class="flex flex-col items-center text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-box-open text-lg mb-0.5"></i>
+                <span class="text-[10px] font-medium">Katalog</span>
+            </button>
+            <button onclick="switchTab('history')" id="nav-history" class="flex flex-col items-center text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-clock-rotate-left text-lg mb-0.5"></i>
+                <span class="text-[10px] font-medium">History</span>
+            </button>
+            <button onclick="switchTab('profile')" id="nav-profile" class="flex flex-col items-center text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-user text-lg mb-0.5"></i>
+                <span class="text-[10px] font-medium">Profil</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <!-- FIREBASE & APP SCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCPN-lA9BFKJDbvqYGmt5yZaLmI2yVuiwo",
+            authDomain: "affilate-2a851.firebaseapp.com",
+            projectId: "affilate-2a851",
+            storageBucket: "affilate-2a851.firebasestorage.app",
+            messagingSenderId: "589263119440",
+            appId: "1:589263119440:web:1b3d498f0434dee52fdd55",
+            measurementId: "G-9FVJ6TSS8K"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'affiliate-id-default';
+
+        // State Management
+        window.currentUser = null;
+        window.isAdmin = false;
+        window.activeTab = 'home';
+        window.membersData = [];
+        window.catalogData = [];
+        window.transactionsData = [];
+        window.adminSettings = { qrisUrl: 'https://placehold.co/300x300/121212/FFFFFF?text=QRIS+AFFILIATE.ID' };
+        let currentDepositNominal = 0;
+
+        // Initialize Firebase Authentication
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.error("Auth error:", e);
+                await signInAnonymously(auth).catch(err => console.error("Anon auth failed:", err));
+            }
+        }
+
+        // Realtime Listeners
+        function setupListeners() {
+            // Listen to Members
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'members'), (snapshot) => {
+                window.membersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // If logged in, update current user session data
+                if (window.currentUser && !window.isAdmin) {
+                    const updated = window.membersData.find(m => m.id === window.currentUser.id);
+                    if (updated) {
+                        window.currentUser = updated;
+                        if (window.activeTab === 'home' || window.activeTab === 'profile') {
+                            renderApp();
+                        }
+                    }
+                }
+                if (window.isAdmin && window.activeTab === 'admin-members') {
+                    renderAdminMembers();
+                }
+            }, (err) => console.error("Members listener error:", err));
+
+            // Listen to Catalog
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), (snapshot) => {
+                window.catalogData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (window.activeTab === 'home' || window.activeTab === 'catalog') {
+                    renderApp();
+                }
+                if (window.isAdmin && window.activeTab === 'admin-catalog') {
+                    renderAdminCatalog();
+                }
+            }, (err) => console.error("Catalog listener error:", err));
+
+            // Listen to Transactions / History
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), (snapshot) => {
+                window.transactionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (window.activeTab === 'history' || window.activeTab === 'home') {
+                    renderApp();
+                }
+                if (window.isAdmin && (window.activeTab === 'admin-transactions' || window.activeTab === 'admin-dashboard')) {
+                    renderAdminPanel();
+                }
+            }, (err) => console.error("Transactions listener error:", err));
+
+            // Listen to Settings (QRIS)
+            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'admin_config'), (docSnap) => {
+                if (docSnap.exists()) {
+                    window.adminSettings = docSnap.data();
+                }
+            }, (err) => console.error("Settings listener error:", err));
+        }
+
+        // Global Utility Functions
+        window.showToast = function(title, msg, isError = false) {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-msg').innerText = msg;
+            icon.className = isError ? "fa-solid fa-circle-exclamation text-tiktok-pink text-lg" : "fa-solid fa-circle-check text-tiktok-cyan text-lg";
+            toast.classList.remove('translate-y-[-200%]');
+            setTimeout(() => {
+                toast.classList.add('translate-y-[-200%]');
+            }, 3000);
+        }
+
+        window.formatRupiah = function(angka) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+        }
+
+        window.showConfirm = function(title, text, onYes) {
+            const modal = document.getElementById('confirm-modal');
+            document.getElementById('confirm-title').innerText = title;
+            document.getElementById('confirm-text').innerText = text;
+            modal.classList.remove('hidden');
+            
+            const btnYes = document.getElementById('confirm-ok');
+            const btnCancel = document.getElementById('confirm-cancel');
+
+            const newYes = btnYes.cloneNode(true);
+            const newCancel = btnCancel.cloneNode(true);
+            btnYes.parentNode.replaceChild(newYes, btnYes);
+            btnCancel.parentNode.replaceChild(newCancel, btnCancel);
+
+            newYes.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                onYes();
+            });
+            newCancel.addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+        }
+
+        // Navigation Switcher
+        window.switchTab = function(tab) {
+            window.activeTab = tab;
+            // Update bottom nav UI
+            const nav = document.getElementById('bottom-nav');
+            if (window.currentUser && !window.isAdmin) {
+                nav.classList.remove('hidden');
+                ['home', 'catalog', 'history', 'profile'].forEach(t => {
+                    const btn = document.getElementById(`nav-${t}`);
+                    if (btn) {
+                        if (t === tab) {
+                            btn.className = "flex flex-col items-center text-tiktok-pink transition";
+                        } else {
+                            btn.className = "flex flex-col items-center text-gray-400 hover:text-white transition";
+                        }
+                    }
+                });
+            } else {
+                nav.classList.add('hidden');
+            }
+            renderApp();
+        }
+
+        // Render Controller
+        window.renderApp = function() {
+            const main = document.getElementById('main-content');
+            const headerRight = document.getElementById('header-right-actions');
+            const nav = document.getElementById('bottom-nav');
+
+            if (window.isAdmin) {
+                nav.classList.add('hidden');
+                headerRight.innerHTML = `<button onclick="adminLogout()" class="bg-tiktok-pink/20 text-tiktok-pink px-3 py-1.5 rounded-xl font-semibold text-xs border border-tiktok-pink/40 hover:bg-tiktok-pink hover:text-white transition"><i class="fa-solid fa-right-from-bracket mr-1"></i> Logout Admin</button>`;
+                renderAdminPanel();
+                return;
+            }
+
+            if (!window.currentUser) {
+                nav.classList.add('hidden');
+                headerRight.innerHTML = `<button onclick="renderLogin()" class="text-xs font-semibold text-tiktok-cyan hover:underline">Masuk / Daftar</button>`;
+                renderAuthPortal();
+                return;
+            }
+
+            // Member Logged In
+            nav.classList.remove('hidden');
+            headerRight.innerHTML = `<div class="flex items-center space-x-2"><span class="text-xs text-gray-300 font-medium">@${window.currentUser.username}</span><button onclick="memberLogout()" class="text-gray-400 hover:text-tiktok-pink transition"><i class="fa-solid fa-power-off text-sm"></i></button></div>`;
+
+            if (window.activeTab === 'home') renderHomeTab();
+            else if (window.activeTab === 'catalog') renderCatalogTab();
+            else if (window.activeTab === 'history') renderHistoryTab();
+            else if (window.activeTab === 'profile') renderProfileTab();
+        }
+
+        // ================= AUTHENTICATION VIEWS =================
+        window.renderAuthPortal = function() {
+            const main = document.getElementById('main-content');
+            main.innerHTML = `
+                <div class="p-6 flex flex-col justify-center min-h-[80vh]">
+                    <div class="text-center mb-8">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-tiktok-pink to-tiktok-cyan flex items-center justify-center text-white font-black text-3xl mx-auto mb-4 shadow-xl shadow-tiktok-pink/20">A</div>
+                        <h2 class="text-2xl font-black text-white">Selamat Datang di AFFILIATE.ID</h2>
+                        <p class="text-xs text-gray-400 mt-1">Platform Affiliate TikTok Terpercaya & Otomatis</p>
+                    </div>
+
+                    <div class="flex bg-[#1E1E1E] p-1 rounded-2xl mb-6 border border-[#2F2F2F]">
+                        <button onclick="toggleAuthMode('login')" id="tab-btn-login" class="flex-1 py-2.5 rounded-xl text-xs font-bold transition bg-tiktok-pink text-white shadow-md">Masuk</button>
+                        <button onclick="toggleAuthMode('register')" id="tab-btn-register" class="flex-1 py-2.5 rounded-xl text-xs font-bold transition text-gray-400">Daftar</button>
+                    </div>
+
+                    <div id="auth-form-container">
+                        <!-- Default Login Form -->
+                        <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Username TikTok / Admin</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-500"><i class="fa-solid fa-at text-xs"></i></span>
+                                    <input type="text" id="login-username" required class="w-full bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-tiktok-cyan transition" placeholder="Masukkan username tiktok">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Password</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-500"><i class="fa-solid fa-lock text-xs"></i></span>
+                                    <input type="password" id="login-password" required class="w-full bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-tiktok-cyan transition" placeholder="••••••••">
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-gradient-to-r from-tiktok-pink to-pink-600 hover:opacity-90 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg shadow-tiktok-pink/20">Masuk Akun</button>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.toggleAuthMode = function(mode) {
+            const btnLogin = document.getElementById('tab-btn-login');
+            const btnRegister = document.getElementById('tab-btn-register');
+            const container = document.getElementById('auth-form-container');
+
+            if (mode === 'login') {
+                btnLogin.className = "flex-1 py-2.5 rounded-xl text-xs font-bold transition bg-tiktok-pink text-white shadow-md";
+                btnRegister.className = "flex-1 py-2.5 rounded-xl text-xs font-bold transition text-gray-400";
+                container.innerHTML = `
+                    <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Username TikTok / Admin</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-500"><i class="fa-solid fa-at text-xs"></i></span>
+                                <input type="text" id="login-username" required class="w-full bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-tiktok-cyan transition" placeholder="Masukkan username tiktok">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Password</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-500"><i class="fa-solid fa-lock text-xs"></i></span>
+                                <input type="password" id="login-password" required class="w-full bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-tiktok-cyan transition" placeholder="••••••••">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-gradient-to-r from-tiktok-pink to-pink-600 hover:opacity-90 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg shadow-tiktok-pink/20">Masuk Akun</button>
+                    </form>
+                `;
+            } else {
+                btnRegister.className = "flex-1 py-2.5 rounded-xl text-xs font-bold transition bg-tiktok-pink text-white shadow-md";
+                btnLogin.className = "flex-1 py-2.5 rounded-xl text-xs font-bold transition text-gray-400";
+                container.innerHTML = `
+                    <form id="register-form" onsubmit="handleRegister(event)" class="space-y-3 pb-8">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Nama Lengkap</label>
+                            <input type="text" id="reg-nama" required class="w-full bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-tiktok-cyan transition" placeholder="Nama lengkap Anda">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">No WhatsApp</label>
+                            <input type="text" id="reg-nowa" required class="w-full bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-tiktok-cyan transition" placeholder="08xxxxxxxxxx">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Email</label>
+                            <input type="email" id="reg-email" required class="w-full bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-tiktok-cyan transition" placeholder="email@domain.com">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Username Tiktok</label>
+                            <input type="text" id="reg-username" required class="w-full bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-tiktok-cyan transition" placeholder="username_tiktok">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Password</label>
+                            <input type="password" id="reg-password" required class="w-full bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-tiktok-cyan transition" placeholder="••••••••">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">Nama Bank</label>
+                                <input type="text" id="reg-bank" required class="w-full bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-tiktok-cyan transition" placeholder="BCA / Dana / dll">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-300 mb-1">No Rekening</label>
+                                <input type="text" id="reg-norek" required class="w-full bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-tiktok-cyan transition" placeholder="Nomor rekening">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-300 mb-1">Nama Pemilik Rekening</label>
+                            <input type="text" id="reg-namapemilik" required class="w-full bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-tiktok-cyan transition" placeholder="Sesuai buku rekening">
+                        </div>
+                        <button type="submit" class="w-full bg-gradient-to-r from-tiktok-pink to-pink-600 hover:opacity-90 text-white font-bold py-3.5 rounded-xl text-sm transition shadow-lg shadow-tiktok-pink/20 mt-4">Daftar Sekarang (Bonus 100k)</button>
+                    </form>
+                `;
+            }
+        }
+
+        window.handleLogin = async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            // Check Admin Login
+            if (username === 'admin' && password === '234817') {
+                window.isAdmin = true;
+                window.showToast("Berhasil", "Selamat datang Admin!");
+                renderApp();
+                return;
+            }
+
+            // Check Member Login
+            const found = window.membersData.find(m => m.username.toLowerCase() === username.toLowerCase() && m.password === password);
+            if (found) {
+                window.currentUser = found;
+                window.isAdmin = false;
+                window.showToast("Berhasil", `Selamat datang kembali, @${found.username}!`);
+                switchTab('home');
+            } else {
+                window.showToast("Gagal", "Username atau password salah!", true);
+            }
+        }
+
+        window.handleRegister = async function(e) {
+            e.preventDefault();
+            const nama = document.getElementById('reg-nama').value.trim();
+            const nowa = document.getElementById('reg-nowa').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const username = document.getElementById('reg-username').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const bank = document.getElementById('reg-bank').value.trim();
+            const norek = document.getElementById('reg-norek').value.trim();
+            const namapemilik = document.getElementById('reg-namapemilik').value.trim();
+
+            // Check if username exists
+            const exists = window.membersData.some(m => m.username.toLowerCase() === username.toLowerCase());
+            if (exists) {
+                window.showToast("Gagal", "Username TikTok sudah terdaftar!", true);
+                return;
+            }
+
+            const newMember = {
+                nama,
+                nowa,
+                email,
+                username,
+                password,
+                bank,
+                norek,
+                namapemilik,
+                saldo: 100000, // Bonus 100k automatic
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'members'), newMember);
+                window.currentUser = { id: docRef.id, ...newMember };
+                window.isAdmin = false;
+                window.showToast("Berhasil", "Pendaftaran sukses! Bonus saldo Rp 100.000 ditambahkan.");
+                switchTab('home');
+            } catch (err) {
+                console.error("Register error:", err);
+                window.showToast("Gagal", "Terjadi kesalahan saat mendaftar.", true);
+            }
+        }
+
+        window.memberLogout = function() {
+            window.currentUser = null;
+            window.showToast("Logout", "Anda telah keluar.");
+            renderApp();
+        }
+
+        window.adminLogout = function() {
+            window.isAdmin = false;
+            window.showToast("Logout", "Admin telah keluar.");
+            renderApp();
+        }
+
+
+        // ================= MEMBER TABS =================
+
+        // 1. HOME TAB
+        window.renderHomeTab = function() {
+            const main = document.getElementById('main-content');
+            const user = window.currentUser;
+
+            // Filter horizontal catalog items
+            const catalogHtml = window.catalogData.length === 0 ? 
+                `<div class="text-center py-8 text-gray-500 text-xs col-span-full">Belum ada produk di katalog.</div>` :
+                window.catalogData.map(item => `
+                    <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-2xl p-3 flex-shrink-0 w-44 flex flex-col justify-between shadow-md">
+                        <div>
+                            <img src="${item.fotoUrl || 'https://placehold.co/150x150/121212/FFFFFF?text=Produk'}" alt="${item.nama}" class="w-full h-32 object-cover rounded-xl mb-2.5">
+                            <h4 class="font-bold text-xs text-white truncate">${item.nama}</h4>
+                            <p class="text-[11px] text-gray-400 mt-0.5">Harga: <span class="text-white font-semibold">${window.formatRupiah(item.harga)}</span></p>
+                            <p class="text-[11px] text-tiktok-cyan font-medium mt-0.5">Komisi: ${window.formatRupiah(item.komisi)}</p>
+                        </div>
+                        <button onclick="buyProduct('${item.id}')" class="w-full mt-3 bg-tiktok-pink hover:bg-opacity-90 text-white py-2 rounded-xl text-xs font-bold transition shadow-md shadow-tiktok-pink/20">Checkout</button>
+                    </div>
+                `).join('');
+
+            main.innerHTML = `
+                <div class="p-4 space-y-5">
+                    <!-- PROFIL MEMBER CARD WITH SALDO -->
+                    <div class="bg-gradient-to-br from-[#1E1E1E] to-[#252525] border border-[#2F2F2F] rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                        <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-tiktok-pink/10 rounded-full blur-2xl"></div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-tiktok-pink to-tiktok-cyan flex items-center justify-center text-white font-bold text-lg shadow-md">
+                                ${user.nama.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-base text-white">${user.nama}</h3>
+                                <p class="text-xs text-tiktok-cyan">@${user.username}</p>
+                            </div>
+                        </div>
+                        <div class="bg-[#121212]/80 border border-[#2F2F2F] rounded-xl p-3.5 flex items-center justify-between mb-4">
+                            <div>
+                                <span class="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Total Saldo Aktif</span>
+                                <h4 class="text-xl font-black text-white mt-0.5">${window.formatRupiah(user.saldo)}</h4>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-tiktok-cyan/10 flex items-center justify-center text-tiktok-cyan">
+                                <i class="fa-solid fa-wallet text-lg"></i>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs text-gray-300">
+                            <div class="bg-[#121212]/50 p-2 rounded-lg">
+                                <span class="text-gray-500 block text-[10px]">Bank / Rekening</span>
+                                <span class="font-semibold">${user.bank} - ${user.norek}</span>
+                            </div>
+                            <div class="bg-[#121212]/50 p-2 rounded-lg">
+                                <span class="text-gray-500 block text-[10px]">WhatsApp</span>
+                                <span class="font-semibold">${user.nowa}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DEPOSIT & WITHDRAW CARDS -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Deposit Card -->
+                        <div onclick="openDepositModal()" class="bg-[#1E1E1E] hover:border-tiktok-cyan border border-[#2F2F2F] rounded-2xl p-4 cursor-pointer transition shadow-md group">
+                            <div class="w-10 h-10 rounded-xl bg-tiktok-pink/10 text-tiktok-pink flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-arrow-down-long text-lg"></i>
+                            </div>
+                            <h4 class="font-bold text-sm text-white mb-0.5">Deposit</h4>
+                            <p class="text-[11px] text-gray-400">Tambah saldo via QRIS otomatis</p>
+                        </div>
+                        <!-- Withdraw Card -->
+                        <div onclick="openWithdrawModal()" class="bg-[#1E1E1E] hover:border-tiktok-cyan border border-[#2F2F2F] rounded-2xl p-4 cursor-pointer transition shadow-md group">
+                            <div class="w-10 h-10 rounded-xl bg-tiktok-cyan/10 text-tiktok-cyan flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                                <i class="fa-solid fa-arrow-up-long text-lg"></i>
+                            </div>
+                            <h4 class="font-bold text-sm text-white mb-0.5">Withdraw</h4>
+                            <p class="text-[11px] text-gray-400">Tarik komisi ke rekening bank</p>
+                        </div>
+                    </div>
+
+                    <!-- KATALOG SCROLLABLE HORIZONTAL -->
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-sm text-white"><i class="fa-solid fa-fire text-tiktok-pink mr-1.5"></i> Katalog Produk Terpopuler</h3>
+                            <button onclick="switchTab('catalog')" class="text-xs text-tiktok-cyan hover:underline font-medium">Lihat Semua</button>
+                        </div>
+                        <div class="flex space-x-3 overflow-x-auto hide-scrollbar pb-2">
+                            ${catalogHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 2. CATALOG TAB
+        window.renderCatalogTab = function() {
+            const main = document.getElementById('main-content');
+            const catalogHtml = window.catalogData.length === 0 ? 
+                `<div class="text-center py-12 text-gray-500 text-sm col-span-full">Belum ada produk di katalog.</div>` :
+                window.catalogData.map(item => `
+                    <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-2xl p-3.5 flex flex-col justify-between shadow-md">
+                        <div>
+                            <img src="${item.fotoUrl || 'https://placehold.co/200x200/121212/FFFFFF?text=Produk'}" alt="${item.nama}" class="w-full h-40 object-cover rounded-xl mb-3">
+                            <h4 class="font-bold text-sm text-white mb-1">${item.nama}</h4>
+                            <p class="text-xs text-gray-400 mb-1">Harga: <span class="text-white font-semibold">${window.formatRupiah(item.harga)}</span></p>
+                            <p class="text-xs text-tiktok-cyan font-medium">Komisi Affiliate: ${window.formatRupiah(item.komisi)}</p>
+                        </div>
+                        <button onclick="buyProduct('${item.id}')" class="w-full mt-4 bg-tiktok-pink hover:bg-opacity-90 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-tiktok-pink/20">Checkout Produk</button>
+                    </div>
+                `).join('');
+
+            main.innerHTML = `
+                <div class="p-4 space-y-4">
+                    <h3 class="font-bold text-base text-white mb-2">Semua Katalog Produk</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        ${catalogHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 3. HISTORY TAB
+        window.renderHistoryTab = function() {
+            const main = document.getElementById('main-content');
+            const myTx = window.transactionsData.filter(t => t.userId === window.currentUser.id);
+
+            const txHtml = myTx.length === 0 ? 
+                `<div class="text-center py-12 text-gray-500 text-sm">Belum ada riwayat pembelian atau transaksi.</div>` :
+                myTx.map(t => {
+                    let statusBadge = '';
+                    if (t.status === 'Complete') {
+                        statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2.5 py-1 rounded-full">Complete</span>`;
+                    } else {
+                        statusBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold px-2.5 py-1 rounded-full">Pending</span>`;
+                    }
+                    return `
+                        <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-2xl p-4 shadow-md space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-tiktok-cyan uppercase">${t.type || 'Pembelian'}</span>
+                                ${statusBadge}
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-white font-medium">${t.productName || t.keterangan}</span>
+                                <span class="font-bold text-white">${window.formatRupiah(t.amount)}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-[11px] text-gray-400 pt-2 border-t border-[#2F2F2F]">
+                                <span>${new Date(t.date).toLocaleString('id-ID')}</span>
+                                ${t.komisi ? `<span class="text-emerald-400 font-semibold">Komisi: +${window.formatRupiah(t.komisi)}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).reverse().join('');
+
+            main.innerHTML = `
+                <div class="p-4 space-y-4">
+                    <h3 class="font-bold text-base text-white mb-2">Riwayat Transaksi & Pembelian</h3>
+                    <div class="space-y-3">
+                        ${txHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 4. PROFILE TAB
+        window.renderProfileTab = function() {
+            const main = document.getElementById('main-content');
+            const u = window.currentUser;
+            main.innerHTML = `
+                <div class="p-4 space-y-4">
+                    <h3 class="font-bold text-base text-white mb-2">Profil Member</h3>
+                    <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-2xl p-5 space-y-4 shadow-xl">
+                        <div class="flex items-center space-x-4 pb-4 border-b border-[#2F2F2F]">
+                            <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-tiktok-pink to-tiktok-cyan flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+                                ${u.nama.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg text-white">${u.nama}</h4>
+                                <p class="text-xs text-tiktok-cyan font-medium">@${u.username}</p>
+                                <p class="text-[11px] text-gray-400 mt-0.5">${u.email}</p>
+                            </div>
+                        </div>
+                        <div class="space-y-3 text-xs">
+                            <div class="flex justify-between py-1 border-b border-[#2F2F2F]/50">
+                                <span class="text-gray-400">No WhatsApp</span>
+                                <span class="font-semibold text-white">${u.nowa}</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-[#2F2F2F]/50">
+                                <span class="text-gray-400">Bank / E-Wallet</span>
+                                <span class="font-semibold text-white">${u.bank}</span>
+                            </div>
+                            <div class="flex justify-between py-1 border-b border-[#2F2F2F]/50">
+                                <span class="text-gray-400">Nomor Rekening</span>
+                                <span class="font-semibold text-white">${u.norek}</span>
+                            </div>
+                            <div class="flex justify-between py-1">
+                                <span class="text-gray-400">Nama Pemilik Rekening</span>
+                                <span class="font-semibold text-white">${u.namapemilik}</span>
+                            </div>
+                        </div>
+                        <button onclick="memberLogout()" class="w-full mt-4 bg-tiktok-pink/20 text-tiktok-pink border border-tiktok-pink/40 hover:bg-tiktok-pink hover:text-white font-bold py-3 rounded-xl text-xs transition">Keluar Akun</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ================= ACTIONS & MODALS =================
+        window.buyProduct = function(productId) {
+            const product = window.catalogData.find(p => p.id === productId);
+            if (!product) return;
+
+            if (window.currentUser.saldo < Number(product.harga)) {
+                window.showToast("Saldo Tidak Cukup", "Saldo Anda tidak mencukupi untuk checkout produk ini. Silakan lakukan Deposit.", true);
+                return;
+            }
+
+            window.showConfirm("Konfirmasi Checkout", `Beli produk "${product.nama}" seharga ${window.formatRupiah(product.harga)}? Saldo akan dipotong dan komisi akan masuk setelah Complete oleh admin.`, async () => {
+                try {
+                    // Deduct balance immediately
+                    const newSaldo = Number(window.currentUser.saldo) - Number(product.harga);
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', window.currentUser.id), {
+                        saldo: newSaldo
+                    });
+                    window.currentUser.saldo = newSaldo;
+
+                    // Add transaction
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), {
+                        userId: window.currentUser.id,
+                        username: window.currentUser.username,
+                        type: 'Pembelian Produk',
+                        productId: product.id,
+                        productName: product.nama,
+                        amount: Number(product.harga),
+                        komisi: Number(product.komisi),
+                        status: 'Pending',
+                        date: new Date().toISOString()
+                    });
+
+                    window.showToast("Berhasil", "Checkout berhasil! Status transaksi Pending.");
+                    switchTab('history');
+                } catch (err) {
+                    console.error("Buy error:", err);
+                    window.showToast("Gagal", "Terjadi kesalahan saat transaksi.", true);
+                }
+            });
+        }
+
+        window.openDepositModal = function() {
+            const nominal = prompt("Masukkan nominal Deposit (Rp):", "50000");
+            if (!nominal || isNaN(nominal) || Number(nominal) <= 0) return;
+            currentDepositNominal = Number(nominal);
+
+            document.getElementById('qris-image-display').src = window.adminSettings.qrisUrl || 'https://placehold.co/250x250/121212/FFFFFF?text=QRIS+Admin';
+            document.getElementById('qris-amount-display').innerText = `Nominal: ${window.formatRupiah(currentDepositNominal)}`;
+            document.getElementById('qris-modal').classList.remove('hidden');
+        }
+
+        window.closeQrisModal = function() {
+            document.getElementById('qris-modal').classList.add('hidden');
+        }
+
+        window.confirmDepositSubmit = async function() {
+            closeQrisModal();
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), {
+                    userId: window.currentUser.id,
+                    username: window.currentUser.username,
+                    type: 'Deposit',
+                    productName: 'Deposit Saldo via QRIS',
+                    amount: currentDepositNominal,
+                    komisi: 0,
+                    status: 'Pending',
+                    date: new Date().toISOString()
+                });
+                window.showToast("Berhasil", "Permintaan deposit terkirim. Menunggu konfirmasi admin.");
+                switchTab('history');
+            } catch (err) {
+                console.error("Deposit error:", err);
+                window.showToast("Gagal", "Gagal mengirim deposit.", true);
+            }
+        }
+
+        window.openWithdrawModal = function() {
+            const nominal = prompt("Masukkan nominal Withdraw / Penarikan (Rp):", "50000");
+            if (!nominal || isNaN(nominal) || Number(nominal) <= 0) return;
+            const amount = Number(nominal);
+
+            if (window.currentUser.saldo < amount) {
+                window.showToast("Saldo Kurang", "Saldo Anda tidak mencukupi untuk penarikan ini.", true);
+                return;
+            }
+
+            window.showConfirm("Konfirmasi Withdraw", `Tarik dana sebesar ${window.formatRupiah(amount)} ke rekening ${window.currentUser.bank} (${window.currentUser.norek})?`, async () => {
+                try {
+                    const newSaldo = Number(window.currentUser.saldo) - amount;
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', window.currentUser.id), {
+                        saldo: newSaldo
+                    });
+                    window.currentUser.saldo = newSaldo;
+
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), {
+                        userId: window.currentUser.id,
+                        username: window.currentUser.username,
+                        type: 'Withdraw',
+                        productName: `Withdraw ke ${window.currentUser.bank} - ${window.currentUser.norek}`,
+                        amount: amount,
+                        komisi: 0,
+                        status: 'Pending',
+                        date: new Date().toISOString()
+                    });
+
+                    window.showToast("Berhasil", "Permintaan withdraw terkirim. Menunggu proses admin.");
+                    switchTab('history');
+                } catch (err) {
+                    console.error("Withdraw error:", err);
+                    window.showToast("Gagal", "Gagal melakukan withdraw.", true);
+                }
+            });
+        }
+
+
+        // ================= ADMIN PANEL =================
+        let adminSubTab = 'dashboard';
+
+        window.renderAdminPanel = function() {
+            const main = document.getElementById('main-content');
+            main.innerHTML = `
+                <div class="p-4 space-y-4">
+                    <div class="flex items-center justify-between bg-[#1E1E1E] p-3 rounded-2xl border border-[#2F2F2F]">
+                        <h3 class="font-bold text-sm text-white"><i class="fa-solid fa-shield-halved text-tiktok-pink mr-1.5"></i> Admin Panel</h3>
+                        <div class="flex space-x-1 text-xs">
+                            <button onclick="switchAdminSub('dashboard')" class="px-2.5 py-1.5 rounded-lg font-medium transition ${adminSubTab === 'dashboard' ? 'bg-tiktok-pink text-white' : 'text-gray-400 hover:text-white'}">Dashboard</button>
+                            <button onclick="switchAdminSub('members')" class="px-2.5 py-1.5 rounded-lg font-medium transition ${adminSubTab === 'members' ? 'bg-tiktok-pink text-white' : 'text-gray-400 hover:text-white'}">Member</button>
+                            <button onclick="switchAdminSub('catalog')" class="px-2.5 py-1.5 rounded-lg font-medium transition ${adminSubTab === 'catalog' ? 'bg-tiktok-pink text-white' : 'text-gray-400 hover:text-white'}">Katalog</button>
+                            <button onclick="switchAdminSub('transactions')" class="px-2.5 py-1.5 rounded-lg font-medium transition ${adminSubTab === 'transactions' ? 'bg-tiktok-pink text-white' : 'text-gray-400 hover:text-white'}">Transaksi</button>
+                        </div>
+                    </div>
+                    <div id="admin-sub-content"></div>
+                </div>
+            `;
+            renderAdminSubContent();
+        }
+
+        window.switchAdminSub = function(sub) {
+            adminSubTab = sub;
+            renderAdminPanel();
+        }
+
+        window.renderAdminSubContent = function() {
+            const container = document.getElementById('admin-sub-content');
+            if (adminSubTab === 'dashboard') {
+                const totalMembers = window.membersData.length;
+                const totalCatalog = window.catalogData.length;
+                const pendingTx = window.transactionsData.filter(t => t.status === 'Pending').length;
+                container.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-3 text-center">
+                                <span class="text-[10px] text-gray-400 block">Total Member</span>
+                                <h4 class="text-lg font-bold text-white mt-1">${totalMembers}</h4>
+                            </div>
+                            <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-3 text-center">
+                                <span class="text-[10px] text-gray-400 block">Total Produk</span>
+                                <h4 class="text-lg font-bold text-white mt-1">${totalCatalog}</h4>
+                            </div>
+                            <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-3 text-center">
+                                <span class="text-[10px] text-gray-400 block">Pending Trx</span>
+                                <h4 class="text-lg font-bold text-tiktok-pink mt-1">${pendingTx}</h4>
+                            </div>
+                        </div>
+
+                        <!-- QRIS CONFIGURATION -->
+                        <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-xs text-white">Pengaturan QRIS Deposit</h4>
+                            <p class="text-[11px] text-gray-400">Masukkan URL gambar QRIS untuk halaman deposit member.</p>
+                            <input type="text" id="admin-qris-url" value="${window.adminSettings.qrisUrl || ''}" class="w-full bg-[#121212] border border-[#2F2F2F] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-tiktok-cyan" placeholder="https://example.com/qris.jpg">
+                            <button onclick="saveAdminQris()" class="bg-tiktok-cyan text-black font-bold text-xs px-4 py-2 rounded-xl">Simpan QRIS</button>
+                        </div>
+                    </div>
+                `;
+            } else if (adminSubTab === 'members') {
+                container.innerHTML = `
+                    <div class="space-y-3">
+                        <h4 class="font-bold text-xs text-white">Kelola Data Member</h4>
+                        <div class="space-y-2" id="admin-members-list">
+                            ${window.membersData.map(m => `
+                                <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-3 space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <div>
+                                            <h5 class="font-bold text-xs text-white">${m.nama} (@${m.username})</h5>
+                                            <p class="text-[10px] text-gray-400">${m.nowa} | Saldo: <span class="text-tiktok-cyan font-bold">${window.formatRupiah(m.saldo)}</span></p>
+                                        </div>
+                                        <div class="flex space-x-1">
+                                            <button onclick="editMember('${m.id}')" class="bg-blue-600/20 text-blue-400 px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-pen"></i></button>
+                                            <button onclick="deleteMember('${m.id}')" class="bg-tiktok-pink/20 text-tiktok-pink px-2.5 py-1 rounded-lg text-[10px] font-bold"><i class="fa-solid fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (adminSubTab === 'catalog') {
+                container.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-2xl p-4 space-y-3">
+                            <h4 class="font-bold text-xs text-white">Tambah Produk Katalog Baru</h4>
+                            <form onsubmit="addCatalogProduct(event)" class="space-y-2.5">
+                                <input type="text" id="cat-nama" required placeholder="Nama Produk" class="w-full bg-[#121212] border border-[#2F2F2F] rounded-xl px-3 py-2 text-xs text-white">
+                                <input type="number" id="cat-harga" required placeholder="Harga (Rp)" class="w-full bg-[#121212] border border-[#2F2F2F] rounded-xl px-3 py-2 text-xs text-white">
+                                <input type="number" id="cat-komisi" required placeholder="Komisi (Rp)" class="w-full bg-[#121212] border border-[#2F2F2F] rounded-xl px-3 py-2 text-xs text-white">
+                                <input type="text" id="cat-foto" required placeholder="URL Foto Produk" class="w-full bg-[#121212] border border-[#2F2F2F] rounded-xl px-3 py-2 text-xs text-white">
+                                <button type="submit" class="w-full bg-tiktok-pink text-white font-bold text-xs py-2.5 rounded-xl">Tambah ke Katalog</button>
+                            </form>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-bold text-xs text-white">Daftar Produk Katalog</h4>
+                            ${window.catalogData.map(c => `
+                                <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-3 flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <img src="${c.fotoUrl}" class="w-10 h-10 object-cover rounded-lg">
+                                        <div>
+                                            <h5 class="font-bold text-xs text-white">${c.nama}</h5>
+                                            <p class="text-[10px] text-gray-400">Harga: ${window.formatRupiah(c.harga)} | Komisi: ${window.formatRupiah(c.komisi)}</p>
+                                        </div>
+                                    </div>
+                                    <button onclick="deleteCatalog('${c.id}')" class="text-tiktok-pink text-xs px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (adminSubTab === 'transactions') {
+                container.innerHTML = `
+                    <div class="space-y-3">
+                        <h4 class="font-bold text-xs text-white">Kelola Transaksi & Pembelian (Pending / Complete)</h4>
+                        <div class="space-y-2">
+                            ${window.transactionsData.map(t => `
+                                <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-3 space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-[10px] font-bold text-tiktok-cyan uppercase">${t.type} (@${t.username})</span>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${t.status === 'Complete' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">${t.status}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-xs text-white">
+                                        <span>${t.productName}</span>
+                                        <span class="font-bold">${window.formatRupiah(t.amount)}</span>
+                                    </div>
+                                    ${t.status === 'Pending' ? `
+                                        <button onclick="completeTransaction('${t.id}')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-1.5 rounded-lg transition mt-1">Ubah Status menjadi COMPLETE</button>
+                                    ` : ''}
+                                </div>
+                            `).reverse().join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        window.saveAdminQris = async function() {
+            const url = document.getElementById('admin-qris-url').value.trim();
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'admin_config'), {
+                    qrisUrl: url
+                });
+                window.showToast("Berhasil", "QRIS berhasil diperbarui.");
+            } catch (err) {
+                console.error("Save QRIS error:", err);
+                window.showToast("Gagal", "Gagal menyimpan QRIS.", true);
+            }
+        }
+
+        window.addCatalogProduct = async function(e) {
+            e.preventDefault();
+            const nama = document.getElementById('cat-nama').value.trim();
+            const harga = Number(document.getElementById('cat-harga').value);
+            const komisi = Number(document.getElementById('cat-komisi').value);
+            const fotoUrl = document.getElementById('cat-foto').value.trim();
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), {
+                    nama, harga, komisi, fotoUrl
+                });
+                window.showToast("Berhasil", "Produk ditambahkan ke katalog.");
+                document.getElementById('cat-nama').value = '';
+                document.getElementById('cat-harga').value = '';
+                document.getElementById('cat-komisi').value = '';
+                document.getElementById('cat-foto').value = '';
+            } catch (err) {
+                console.error("Add catalog error:", err);
+                window.showToast("Gagal", "Gagal menambah produk.", true);
+            }
+        }
+
+        window.deleteCatalog = async function(id) {
+            window.showConfirm("Hapus Produk", "Yakin ingin menghapus produk ini dari katalog?", async () => {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'catalog', id));
+                    window.showToast("Berhasil", "Produk dihapus.");
+                } catch (err) {
+                    console.error("Delete catalog error:", err);
+                    window.showToast("Gagal", "Gagal menghapus produk.", true);
+                }
+            });
+        }
+
+        window.editMember = async function(memberId) {
+            const member = window.membersData.find(m => m.id === memberId);
+            if (!member) return;
+
+            const newNama = prompt("Edit Nama:", member.nama);
+            if (newNama === null) return;
+            const newSaldo = prompt("Edit Saldo (Rp):", member.saldo);
+            if (newSaldo === null || isNaN(newSaldo)) return;
+
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', memberId), {
+                    nama: newNama,
+                    saldo: Number(newSaldo)
+                });
+                window.showToast("Berhasil", "Data member diperbarui.");
+            } catch (err) {
+                console.error("Edit member error:", err);
+                window.showToast("Gagal", "Gagal memperbarui member.", true);
+            }
+        }
+
+        window.deleteMember = async function(memberId) {
+            window.showConfirm("Hapus Member", "Yakin ingin menghapus member ini?", async () => {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', memberId));
+                    window.showToast("Berhasil", "Member dihapus.");
+                } catch (err) {
+                    console.error("Delete member error:", err);
+                    window.showToast("Gagal", "Gagal menghapus member.", true);
+                }
+            });
+        }
+
+        window.completeTransaction = async function(txId) {
+            const tx = window.transactionsData.find(t => t.id === txId);
+            if (!tx) return;
+
+            window.showConfirm("Ubah Status Complete", `Ubah status transaksi ${tx.type} menjadi Complete? Jika ini pembelian produk, komisi (${window.formatRupiah(tx.komisi || 0)}) dan uang checkout akan dikembalikan/masuk ke akun member.`, async () => {
+                try {
+                    // Update transaction status to Complete
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', txId), {
+                        status: 'Complete'
+                    });
+
+                    // If it's a purchase, return capital + komisi to member balance
+                    if (tx.type === 'Pembelian Produk' && tx.userId) {
+                        const member = window.membersData.find(m => m.id === tx.userId);
+                        if (member) {
+                            const refundAndCommission = Number(tx.amount) + Number(tx.komisi || 0);
+                            const updatedSaldo = Number(member.saldo) + refundAndCommission;
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', tx.userId), {
+                                saldo: updatedSaldo
+                            });
+                        }
+                    } else if (tx.type === 'Deposit' && tx.userId) {
+                        // If deposit is completed by admin, add deposit amount to member balance
+                        const member = window.membersData.find(m => m.id === tx.userId);
+                        if (member) {
+                            const updatedSaldo = Number(member.saldo) + Number(tx.amount);
+                            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'members', tx.userId), {
+                                saldo: updatedSaldo
+                            });
+                        }
+                    }
+
+                    window.showToast("Berhasil", "Status transaksi diubah menjadi Complete dan saldo/komisi diperbarui.");
+                } catch (err) {
+                    console.error("Complete tx error:", err);
+                    window.showToast("Gagal", "Gagal memproses transaksi.", true);
+                }
+            });
+        }
+
+        // Initialize on Load
+        window.onload = async function() {
+            await initAuth();
+            setupListeners();
+            renderApp();
+        }
+    </script>
+</body>
+</html>
