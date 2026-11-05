@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AFFILIATE.ID - TikTok Affiliate Platform</title>
+    <title>LUMIO AGENCY</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
@@ -80,8 +80,8 @@
         <!-- HEADER -->
         <header class="sticky top-0 z-40 bg-[#121212]/90 backdrop-blur-md border-b border-[#2F2F2F] px-4 py-3 flex items-center justify-between">
             <div class="flex items-center space-x-2">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-tiktok-pink to-tiktok-cyan flex items-center justify-center text-white font-black text-lg shadow-md shadow-tiktok-pink/20">A</div>
-                <span class="font-black text-lg tracking-wider bg-gradient-to-r from-white via-gray-200 to-tiktok-cyan bg-clip-text text-transparent">AFFILIATE<span class="text-tiktok-pink">.ID</span></span>
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-tiktok-pink to-tiktok-cyan flex items-center justify-center text-white font-black text-lg shadow-md shadow-tiktok-pink/20">L</div>
+                <span class="font-black text-lg tracking-wider bg-gradient-to-r from-white via-gray-200 to-tiktok-cyan bg-clip-text text-transparent">LUMIO<span class="text-tiktok-pink"> AGENCY</span></span>
             </div>
             <div id="header-right-actions" class="flex items-center space-x-3">
                 <!-- Dynamic Auth / User Quick info -->
@@ -94,14 +94,18 @@
         </main>
 
         <!-- BOTTOM NAVIGATION (Member View) -->
-        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-[#1E1E1E]/95 backdrop-blur-md border-t border-[#2F2F2F] px-6 py-2.5 flex justify-between items-center z-40 hidden">
+        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-[#1E1E1E]/95 backdrop-blur-md border-t border-[#2F2F2F] px-3 py-2.5 flex justify-between items-center z-40 hidden">
             <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center text-tiktok-pink transition">
                 <i class="fa-solid fa-house text-lg mb-0.5"></i>
                 <span class="text-[10px] font-medium">Beranda</span>
             </button>
-            <button onclick="switchTab('catalog')" id="nav-catalog" class="flex flex-col items-center text-gray-400 hover:text-white transition">
+            <button onclick="switchTab('drhopsip')" id="nav-drhopsip" class="flex flex-col items-center text-gray-400 hover:text-white transition">
                 <i class="fa-solid fa-box-open text-lg mb-0.5"></i>
-                <span class="text-[10px] font-medium">Katalog</span>
+                <span class="text-[10px] font-medium">Drhopsip</span>
+            </button>
+            <button onclick="switchTab('clockin')" id="nav-clockin" class="flex flex-col items-center text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-camera text-lg mb-0.5"></i>
+                <span class="text-[10px] font-medium">Clock In</span>
             </button>
             <button onclick="switchTab('history')" id="nav-history" class="flex flex-col items-center text-gray-400 hover:text-white transition">
                 <i class="fa-solid fa-clock-rotate-left text-lg mb-0.5"></i>
@@ -142,8 +146,9 @@
         window.activeTab = 'home';
         window.membersData = [];
         window.catalogData = [];
+        window.attendanceData = [];
         window.transactionsData = [];
-        window.adminSettings = { qrisUrl: 'https://placehold.co/300x300/121212/FFFFFF?text=QRIS+AFFILIATE.ID' };
+        window.adminSettings = { qrisUrl: 'https://placehold.co/300x300/121212/FFFFFF?text=QRIS+LUMIO+AGENCY' };
         let currentDepositNominal = 0;
 
         // Initialize Firebase Authentication
@@ -170,7 +175,7 @@
                     const updated = window.membersData.find(m => m.id === window.currentUser.id);
                     if (updated) {
                         window.currentUser = updated;
-                        if (window.activeTab === 'home' || window.activeTab === 'profile') {
+                        if (['home', 'profile', 'drhopsip'].includes(window.activeTab)) {
                             renderApp();
                         }
                     }
@@ -180,16 +185,12 @@
                 }
             }, (err) => console.error("Members listener error:", err));
 
-            // Listen to Catalog
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'catalog'), (snapshot) => {
-                window.catalogData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                if (window.activeTab === 'home' || window.activeTab === 'catalog') {
-                    renderApp();
-                }
-                if (window.isAdmin && window.activeTab === 'admin-catalog') {
-                    renderAdminCatalog();
-                }
-            }, (err) => console.error("Catalog listener error:", err));
+            // Listen to Attendance (Clock In)
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), (snapshot) => {
+                window.attendanceData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (!window.isAdmin && window.activeTab === 'clockin' && !camStream && !shotData) renderApp();
+                if (window.isAdmin && (adminSubTab === 'attendance' || adminSubTab === 'dashboard')) renderAdminPanel();
+            }, (err) => console.error("Attendance listener error:", err));
 
             // Listen to Transactions / History
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), (snapshot) => {
@@ -253,11 +254,12 @@
         // Navigation Switcher
         window.switchTab = function(tab) {
             window.activeTab = tab;
+            if (window.stopCam) window.stopCam();
             // Update bottom nav UI
             const nav = document.getElementById('bottom-nav');
             if (window.currentUser && !window.isAdmin) {
                 nav.classList.remove('hidden');
-                ['home', 'catalog', 'history', 'profile'].forEach(t => {
+                ['home', 'drhopsip', 'clockin', 'history', 'profile'].forEach(t => {
                     const btn = document.getElementById(`nav-${t}`);
                     if (btn) {
                         if (t === tab) {
@@ -298,7 +300,8 @@
             headerRight.innerHTML = `<div class="flex items-center space-x-2"><span class="text-xs text-gray-300 font-medium">@${window.currentUser.username}</span><button onclick="memberLogout()" class="text-gray-400 hover:text-tiktok-pink transition"><i class="fa-solid fa-power-off text-sm"></i></button></div>`;
 
             if (window.activeTab === 'home') renderHomeTab();
-            else if (window.activeTab === 'catalog') renderCatalogTab();
+            else if (window.activeTab === 'drhopsip') renderDrhopsipTab();
+            else if (window.activeTab === 'clockin') renderClockInTab();
             else if (window.activeTab === 'history') renderHistoryTab();
             else if (window.activeTab === 'profile') renderProfileTab();
         }
@@ -309,9 +312,9 @@
             main.innerHTML = `
                 <div class="p-6 flex flex-col justify-center min-h-[80vh]">
                     <div class="text-center mb-8">
-                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-tiktok-pink to-tiktok-cyan flex items-center justify-center text-white font-black text-3xl mx-auto mb-4 shadow-xl shadow-tiktok-pink/20">A</div>
-                        <h2 class="text-2xl font-black text-white">Selamat Datang di AFFILIATE.ID</h2>
-                        <p class="text-xs text-gray-400 mt-1">Platform Affiliate TikTok Terpercaya & Otomatis</p>
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-tiktok-pink to-tiktok-cyan flex items-center justify-center text-white font-black text-3xl mx-auto mb-4 shadow-xl shadow-tiktok-pink/20">L</div>
+                        <h2 class="text-2xl font-black text-white">Selamat Datang di LUMIO AGENCY</h2>
+                        <p class="text-xs text-gray-400 mt-1">Platform Dropship & Absensi Terpercaya</p>
                     </div>
 
                     <div class="flex bg-[#1E1E1E] p-1 rounded-2xl mb-6 border border-[#2F2F2F]">
@@ -484,6 +487,7 @@
         }
 
         window.memberLogout = function() {
+            if (window.stopCam) window.stopCam();
             window.currentUser = null;
             window.showToast("Logout", "Anda telah keluar.");
             renderApp();
@@ -503,21 +507,7 @@
             const main = document.getElementById('main-content');
             const user = window.currentUser;
 
-            // Filter horizontal catalog items
-            const catalogHtml = window.catalogData.length === 0 ? 
-                `<div class="text-center py-8 text-gray-500 text-xs col-span-full">Belum ada produk di katalog.</div>` :
-                window.catalogData.map(item => `
-                    <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-2xl p-3 flex-shrink-0 w-44 flex flex-col justify-between shadow-md">
-                        <div>
-                            <img src="${item.fotoUrl || 'https://placehold.co/150x150/121212/FFFFFF?text=Produk'}" alt="${item.nama}" class="w-full h-32 object-cover rounded-xl mb-2.5">
-                            <h4 class="font-bold text-xs text-white truncate">${item.nama}</h4>
-                            <p class="text-[11px] text-gray-400 mt-0.5">Harga: <span class="text-white font-semibold">${window.formatRupiah(item.harga)}</span></p>
-                            <p class="text-[11px] text-tiktok-cyan font-medium mt-0.5">Komisi: ${window.formatRupiah(item.komisi)}</p>
-                        </div>
-                        <button onclick="buyProduct('${item.id}')" class="w-full mt-3 bg-tiktok-pink hover:bg-opacity-90 text-white py-2 rounded-xl text-xs font-bold transition shadow-md shadow-tiktok-pink/20">Checkout</button>
-                    </div>
-                `).join('');
-
+            
             main.innerHTML = `
                 <div class="p-4 space-y-5">
                     <!-- PROFIL MEMBER CARD WITH SALDO -->
@@ -573,48 +563,236 @@
                         </div>
                     </div>
 
-                    <!-- KATALOG SCROLLABLE HORIZONTAL -->
-                    <div>
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="font-bold text-sm text-white"><i class="fa-solid fa-fire text-tiktok-pink mr-1.5"></i> Katalog Produk Terpopuler</h3>
-                            <button onclick="switchTab('catalog')" class="text-xs text-tiktok-cyan hover:underline font-medium">Lihat Semua</button>
-                        </div>
-                        <div class="flex space-x-3 overflow-x-auto hide-scrollbar pb-2">
-                            ${catalogHtml}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // 2. CATALOG TAB
-        window.renderCatalogTab = function() {
-            const main = document.getElementById('main-content');
-            const catalogHtml = window.catalogData.length === 0 ? 
-                `<div class="text-center py-12 text-gray-500 text-sm col-span-full">Belum ada produk di katalog.</div>` :
-                window.catalogData.map(item => `
-                    <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-2xl p-3.5 flex flex-col justify-between shadow-md">
-                        <div>
-                            <img src="${item.fotoUrl || 'https://placehold.co/200x200/121212/FFFFFF?text=Produk'}" alt="${item.nama}" class="w-full h-40 object-cover rounded-xl mb-3">
-                            <h4 class="font-bold text-sm text-white mb-1">${item.nama}</h4>
-                            <p class="text-xs text-gray-400 mb-1">Harga: <span class="text-white font-semibold">${window.formatRupiah(item.harga)}</span></p>
-                            <p class="text-xs text-tiktok-cyan font-medium">Komisi Affiliate: ${window.formatRupiah(item.komisi)}</p>
-                        </div>
-                        <button onclick="buyProduct('${item.id}')" class="w-full mt-4 bg-tiktok-pink hover:bg-opacity-90 text-white py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-tiktok-pink/20">Checkout Produk</button>
-                    </div>
-                `).join('');
-
-            main.innerHTML = `
-                <div class="p-4 space-y-4">
-                    <h3 class="font-bold text-base text-white mb-2">Semua Katalog Produk</h3>
+                    <!-- MENU CEPAT -->
                     <div class="grid grid-cols-2 gap-3">
-                        ${catalogHtml}
+                        <div onclick="switchTab('drhopsip')" class="bg-[#1E1E1E] hover:border-tiktok-pink border border-[#2F2F2F] rounded-2xl p-4 cursor-pointer transition shadow-md">
+                            <i class="fa-solid fa-box-open text-tiktok-pink text-xl mb-2"></i>
+                            <h4 class="font-bold text-sm text-white">Drhopsip</h4>
+                            <p class="text-[11px] text-gray-400">10 order baru setiap hari</p>
+                        </div>
+                        <div onclick="switchTab('clockin')" class="bg-[#1E1E1E] hover:border-tiktok-cyan border border-[#2F2F2F] rounded-2xl p-4 cursor-pointer transition shadow-md">
+                            <i class="fa-solid fa-camera text-tiktok-cyan text-xl mb-2"></i>
+                            <h4 class="font-bold text-sm text-white">Clock In</h4>
+                            <p class="text-[11px] text-gray-400">Absen foto + lokasi</p>
+                        </div>
                     </div>
                 </div>
             `;
         }
 
-        // 3. HISTORY TAB
+        // 2. DRHOPSIP TAB
+        const memRef = id => doc(db, 'artifacts', appId, 'public', 'data', 'members', id);
+        const colRef = n => collection(db, 'artifacts', appId, 'public', 'data', n);
+        const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+        const pick = a => a[rnd(0, a.length - 1)];
+        const todayKey = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+        window.mask = s => { s = String(s || ''); return s ? s.charAt(0) + '*'.repeat(Math.max(3, Math.min(s.length - 1, 6))) : '-'; };
+
+        const DS = {
+            first: ['Budi','Siti','Andi','Dewi','Rizky','Putri','Agus','Ratna','Dedi','Fitri','Joko','Lestari','Hendra','Maya','Bayu','Nur','Fajar','Wulan','Eko','Intan'],
+            last: ['Santoso','Wijaya','Pratama','Lestari','Saputra','Hidayat','Kusuma','Rahayu','Setiawan','Nugroho','Wibowo','Permata'],
+            street: ['Jl. Melati','Jl. Kenanga','Jl. Merdeka','Jl. Sudirman','Jl. Ahmad Yani','Jl. Diponegoro','Jl. Cendana','Jl. Mawar'],
+            city: ['Surabaya','Malang','Jakarta','Bandung','Semarang','Medan','Makassar','Yogyakarta','Bekasi','Depok'],
+            prod: ['Serum Wajah Glow','Sepatu Sneakers Pria','Tas Selempang Wanita','Headset Bluetooth','Jam Tangan Digital','Blender Portable','Lampu LED Meja','Kemeja Flanel','Power Bank 20000mAh','Case HP Premium','Sandal Slide Unisex','Skincare Set Paket']
+        };
+
+        // Harga = base + jitter. Komisi 5%-25%: makin mahal makin besar persentasenya.
+        function priceItem(it, base) {
+            const harga = Math.round((base + it.j) / 1000) * 1000;
+            let pct = 5 + Math.min(1, harga / 1500000) * 17 + it.n;
+            pct = Math.round(Math.max(5, Math.min(25, pct)) * 10) / 10;
+            return { ...it, harga, pct, komisi: Math.round(harga * pct / 100 / 100) * 100 };
+        }
+        function newItem(base) {
+            return priceItem({
+                id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                nama: pick(DS.first) + ' ' + pick(DS.last),
+                nohp: '08' + rnd(10, 99) + String(rnd(0, 99999999)).padStart(8, '0'),
+                alamat: pick(DS.street) + ' No. ' + rnd(1, 150) + ', ' + pick(DS.city),
+                produk: pick(DS.prod),
+                j: rnd(0, 20) * 1000,
+                n: Math.random() * 3
+            }, base);
+        }
+        function ensureDs() {
+            const u = window.currentUser;
+            if (u.dsDay === todayKey() && Array.isArray(u.dsItems)) return;
+            const base = rnd(5, 9) * 10000; // harga awal harian 50-90k
+            const items = Array.from({ length: 10 }, () => newItem(base));
+            Object.assign(u, { dsDay: todayKey(), dsBase: base, dsDropped: 0, dsItems: items });
+            updateDoc(memRef(u.id), { dsDay: u.dsDay, dsBase: base, dsDropped: 0, dsItems: items }).catch(console.error);
+        }
+
+        window.renderDrhopsipTab = function() {
+            ensureDs();
+            const u = window.currentUser;
+            const items = u.dsItems || [];
+            const rows = items.map(it => `
+                <tr class="border-t border-[#2F2F2F]">
+                    <td class="py-2 pr-2">${mask(it.nama)}</td>
+                    <td class="pr-2">${mask(it.nohp)}</td>
+                    <td class="pr-2">${mask(it.alamat)}</td>
+                    <td class="pr-2">${mask(it.produk)}</td>
+                    <td class="pr-2 text-white font-semibold whitespace-nowrap">${window.formatRupiah(it.harga)}</td>
+                    <td class="pr-2 text-tiktok-cyan font-semibold whitespace-nowrap">${window.formatRupiah(it.komisi)} <span class="text-gray-500">(${it.pct}%)</span></td>
+                    <td><button onclick="dropItem('${it.id}')" class="bg-tiktok-pink text-white font-bold text-[10px] px-3 py-1.5 rounded-lg">DROP</button></td>
+                </tr>`).join('');
+            document.getElementById('main-content').innerHTML = `
+                <div class="p-4 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-base text-white">Drhopsip</h3>
+                            <p class="text-[11px] text-gray-400">Sisa kuota hari ini: <span class="text-tiktok-cyan font-bold">${10 - (u.dsDropped || 0)}/10</span> | Saldo: ${window.formatRupiah(u.saldo)}</p>
+                        </div>
+                        <button onclick="refreshDs()" class="bg-tiktok-cyan/10 text-tiktok-cyan border border-tiktok-cyan/40 px-3 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-rotate mr-1"></i>Refresh</button>
+                    </div>
+                    <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-2xl p-3 overflow-x-auto">
+                        ${items.length === 0 ? '<p class="text-center text-gray-500 text-xs py-8">Kuota Drhopsip hari ini sudah habis. Kembali lagi besok.</p>' : `
+                        <table class="w-full min-w-[560px] text-[11px] text-gray-300 text-left">
+                            <tr class="text-gray-500"><th class="pb-1">Nama</th><th>No Hp</th><th>Alamat</th><th>Produk</th><th>Harga</th><th>Komisi</th><th></th></tr>
+                            ${rows}
+                        </table>`}
+                    </div>
+                </div>`;
+        }
+
+        window.refreshDs = async function() {
+            ensureDs();
+            const u = window.currentUser;
+            const n = 10 - (u.dsDropped || 0);
+            if (n <= 0) { window.showToast("Info", "Kuota hari ini sudah habis.", true); return; }
+            u.dsItems = Array.from({ length: n }, () => newItem(u.dsBase));
+            try {
+                await updateDoc(memRef(u.id), { dsItems: u.dsItems });
+                window.showToast("Refresh", "Data Drhopsip baru dimuat.");
+            } catch (e) { console.error(e); window.showToast("Gagal", "Gagal refresh data.", true); }
+            renderDrhopsipTab();
+        }
+
+        window.dropItem = function(id) {
+            const it = (window.currentUser.dsItems || []).find(x => x.id === id);
+            if (!it) return;
+            if (Number(window.currentUser.saldo) < it.harga) {
+                window.showToast("Saldo Tidak Cukup", "Silakan lakukan Deposit terlebih dahulu.", true);
+                return;
+            }
+            window.showConfirm("Konfirmasi DROP", `Drop produk seharga ${window.formatRupiah(it.harga)}? Saldo dipotong dan akan kembali beserta komisi ${window.formatRupiah(it.komisi)} setelah status COMPLETE oleh admin.`, async () => {
+                const u = window.currentUser;
+                try {
+                    const newBase = u.dsBase + rnd(5, 10) * 10000; // naik 50-100k
+                    const rest = u.dsItems.filter(x => x.id !== id).map(x => priceItem(x, newBase));
+                    const newSaldo = Number(u.saldo) - it.harga;
+                    await updateDoc(memRef(u.id), { saldo: newSaldo, dsBase: newBase, dsDropped: (u.dsDropped || 0) + 1, dsItems: rest });
+                    Object.assign(u, { saldo: newSaldo, dsBase: newBase, dsDropped: (u.dsDropped || 0) + 1, dsItems: rest });
+                    await addDoc(colRef('transactions'), {
+                        userId: u.id, username: u.username, type: 'Drhopsip',
+                        productName: it.produk, nama: it.nama, nohp: it.nohp, alamat: it.alamat,
+                        amount: it.harga, komisi: it.komisi, status: 'Pending', date: new Date().toISOString()
+                    });
+                    window.showToast("Berhasil", "DROP berhasil! Status PENDING, menunggu admin.");
+                    switchTab('history');
+                } catch (err) {
+                    console.error("Drop error:", err);
+                    window.showToast("Gagal", "Terjadi kesalahan saat DROP.", true);
+                }
+            });
+        }
+
+        // 2b. CLOCK IN TAB
+        let camStream = null, shotData = null;
+        window.stopCam = function() { if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; } shotData = null; };
+
+        window.renderClockInTab = function() {
+            const u = window.currentUser;
+            const mine = window.attendanceData.filter(a => a.userId === u.id).sort((a, b) => b.date.localeCompare(a.date));
+            const done = mine.find(a => a.dateKey === todayKey());
+            const body = done ? `
+                <div class="bg-[#1E1E1E] border border-emerald-500/30 rounded-2xl p-4 text-center space-y-2">
+                    <img src="${done.photo}" class="w-40 h-40 object-cover rounded-xl mx-auto">
+                    <p class="text-emerald-400 font-bold text-sm"><i class="fa-solid fa-circle-check mr-1"></i>Sudah Clock In hari ini</p>
+                    <p class="text-[11px] text-gray-400">${new Date(done.date).toLocaleString('id-ID')}</p>
+                    <a target="_blank" href="https://www.google.com/maps?q=${done.lat},${done.lng}" class="text-[11px] text-tiktok-cyan hover:underline"><i class="fa-solid fa-location-dot mr-1"></i>Lihat lokasi</a>
+                </div>` : `
+                <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-2xl p-4 space-y-3 text-center">
+                    <video id="cam-video" autoplay playsinline muted class="hidden w-full rounded-xl bg-black"></video>
+                    <img id="cam-preview" class="hidden w-full rounded-xl">
+                    <p id="cam-hint" class="text-xs text-gray-400">Ambil foto selfie, lokasi Anda akan direkam otomatis saat mengirim.</p>
+                    <button id="btn-open" onclick="openCam()" class="w-full bg-tiktok-pink text-white font-bold text-sm py-3 rounded-xl"><i class="fa-solid fa-camera mr-1"></i>Buka Kamera</button>
+                    <button id="btn-snap" onclick="snapPhoto()" class="hidden w-full bg-tiktok-cyan text-black font-bold text-sm py-3 rounded-xl">Ambil Foto</button>
+                    <div id="btn-shot" class="hidden grid grid-cols-2 gap-2">
+                        <button onclick="openCam()" class="bg-gray-700 text-white font-bold text-sm py-3 rounded-xl">Ulangi</button>
+                        <button id="btn-send" onclick="submitClockIn()" class="bg-emerald-600 text-white font-bold text-sm py-3 rounded-xl">Kirim Clock In</button>
+                    </div>
+                </div>`;
+            document.getElementById('main-content').innerHTML = `
+                <div class="p-4 space-y-4">
+                    <h3 class="font-bold text-base text-white">Clock In</h3>
+                    ${body}
+                    <h4 class="font-bold text-xs text-white pt-2">Riwayat Clock In</h4>
+                    <div class="space-y-2">
+                        ${mine.slice(0, 7).map(a => `<div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-2.5 flex items-center space-x-3 text-[11px] text-gray-300"><img src="${a.photo}" class="w-10 h-10 rounded-lg object-cover"><span>${new Date(a.date).toLocaleString('id-ID')}</span></div>`).join('') || '<p class="text-gray-500 text-xs">Belum ada riwayat.</p>'}
+                    </div>
+                </div>`;
+        }
+
+        window.openCam = async function() {
+            try {
+                stopCam();
+                camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+                const v = document.getElementById('cam-video');
+                v.srcObject = camStream;
+                v.classList.remove('hidden');
+                ['cam-preview', 'btn-open', 'btn-shot'].forEach(i => document.getElementById(i).classList.add('hidden'));
+                document.getElementById('btn-snap').classList.remove('hidden');
+            } catch (e) {
+                window.showToast("Kamera", "Izin kamera ditolak / tidak tersedia (butuh HTTPS).", true);
+            }
+        }
+
+        window.snapPhoto = function() {
+            const v = document.getElementById('cam-video');
+            if (!v.videoWidth) return;
+            const c = document.createElement('canvas');
+            c.width = 320; c.height = Math.round(320 * v.videoHeight / v.videoWidth);
+            c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+            const data = c.toDataURL('image/jpeg', 0.6);
+            if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+            shotData = data;
+            v.classList.add('hidden');
+            const p = document.getElementById('cam-preview');
+            p.src = data; p.classList.remove('hidden');
+            document.getElementById('btn-snap').classList.add('hidden');
+            document.getElementById('btn-shot').classList.remove('hidden');
+        }
+
+        window.submitClockIn = function() {
+            if (!shotData) return;
+            if (!navigator.geolocation) { window.showToast("Lokasi", "Perangkat tidak mendukung lokasi.", true); return; }
+            const btn = document.getElementById('btn-send');
+            btn.disabled = true; btn.innerText = 'Mengambil lokasi...';
+            navigator.geolocation.getCurrentPosition(async pos => {
+                const u = window.currentUser;
+                try {
+                    await addDoc(colRef('attendance'), {
+                        userId: u.id, username: u.username, nama: u.nama,
+                        dateKey: todayKey(), date: new Date().toISOString(),
+                        photo: shotData, lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy)
+                    });
+                    shotData = null;
+                    window.showToast("Berhasil", "Clock In tercatat dan terkirim ke admin.");
+                    renderClockInTab();
+                } catch (e) {
+                    console.error(e);
+                    btn.disabled = false; btn.innerText = 'Kirim Clock In';
+                    window.showToast("Gagal", "Gagal mengirim Clock In.", true);
+                }
+            }, () => {
+                btn.disabled = false; btn.innerText = 'Kirim Clock In';
+                window.showToast("Lokasi", "Izin lokasi ditolak. Aktifkan GPS lalu coba lagi.", true);
+            }, { enableHighAccuracy: true, timeout: 15000 });
+        }
+
+// 3. HISTORY TAB
         window.renderHistoryTab = function() {
             const main = document.getElementById('main-content');
             const myTx = window.transactionsData.filter(t => t.userId === window.currentUser.id);
@@ -635,7 +813,7 @@
                                 ${statusBadge}
                             </div>
                             <div class="flex justify-between items-center text-sm">
-                                <span class="text-white font-medium">${t.productName || t.keterangan}</span>
+                                <span class="text-white font-medium">${t.type === 'Drhopsip' ? 'Drhopsip - ' + mask(t.productName) + ' (' + mask(t.nama) + ')' : (t.productName || t.keterangan)}</span>
                                 <span class="font-bold text-white">${window.formatRupiah(t.amount)}</span>
                             </div>
                             <div class="flex justify-between items-center text-[11px] text-gray-400 pt-2 border-t border-[#2F2F2F]">
@@ -825,7 +1003,7 @@
                         <div class="flex space-x-1 text-xs">
                             <button onclick="switchAdminSub('dashboard')" class="px-2.5 py-1.5 rounded-lg font-medium transition ${adminSubTab === 'dashboard' ? 'bg-tiktok-pink text-white' : 'text-gray-400 hover:text-white'}">Dashboard</button>
                             <button onclick="switchAdminSub('members')" class="px-2.5 py-1.5 rounded-lg font-medium transition ${adminSubTab === 'members' ? 'bg-tiktok-pink text-white' : 'text-gray-400 hover:text-white'}">Member</button>
-                            <button onclick="switchAdminSub('catalog')" class="px-2.5 py-1.5 rounded-lg font-medium transition ${adminSubTab === 'catalog' ? 'bg-tiktok-pink text-white' : 'text-gray-400 hover:text-white'}">Katalog</button>
+                            <button onclick="switchAdminSub('attendance')" class="px-2.5 py-1.5 rounded-lg font-medium transition ${adminSubTab === 'attendance' ? 'bg-tiktok-pink text-white' : 'text-gray-400 hover:text-white'}">Absensi</button>
                             <button onclick="switchAdminSub('transactions')" class="px-2.5 py-1.5 rounded-lg font-medium transition ${adminSubTab === 'transactions' ? 'bg-tiktok-pink text-white' : 'text-gray-400 hover:text-white'}">Transaksi</button>
                         </div>
                     </div>
@@ -844,7 +1022,7 @@
             const container = document.getElementById('admin-sub-content');
             if (adminSubTab === 'dashboard') {
                 const totalMembers = window.membersData.length;
-                const totalCatalog = window.catalogData.length;
+                const totalCatalog = window.attendanceData.filter(a => a.dateKey === todayKey()).length;
                 const pendingTx = window.transactionsData.filter(t => t.status === 'Pending').length;
                 container.innerHTML = `
                     <div class="space-y-4">
@@ -854,7 +1032,7 @@
                                 <h4 class="text-lg font-bold text-white mt-1">${totalMembers}</h4>
                             </div>
                             <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-3 text-center">
-                                <span class="text-[10px] text-gray-400 block">Total Produk</span>
+                                <span class="text-[10px] text-gray-400 block">Clock In Hari Ini</span>
                                 <h4 class="text-lg font-bold text-white mt-1">${totalCatalog}</h4>
                             </div>
                             <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-3 text-center">
@@ -894,37 +1072,42 @@
                         </div>
                     </div>
                 `;
-            } else if (adminSubTab === 'catalog') {
+            } else if (adminSubTab === 'attendance') {
+                const att = [...window.attendanceData].sort((a, b) => b.date.localeCompare(a.date));
+                const todayCnt = att.filter(a => a.dateKey === todayKey()).length;
+                const recap = {};
+                att.forEach(a => {
+                    const r = recap[a.userId] || (recap[a.userId] = { nama: a.nama, username: a.username, days: 0, last: a.date });
+                    r.days++;
+                });
                 container.innerHTML = `
                     <div class="space-y-4">
-                        <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-2xl p-4 space-y-3">
-                            <h4 class="font-bold text-xs text-white">Tambah Produk Katalog Baru</h4>
-                            <form onsubmit="addCatalogProduct(event)" class="space-y-2.5">
-                                <input type="text" id="cat-nama" required placeholder="Nama Produk" class="w-full bg-[#121212] border border-[#2F2F2F] rounded-xl px-3 py-2 text-xs text-white">
-                                <input type="number" id="cat-harga" required placeholder="Harga (Rp)" class="w-full bg-[#121212] border border-[#2F2F2F] rounded-xl px-3 py-2 text-xs text-white">
-                                <input type="number" id="cat-komisi" required placeholder="Komisi (Rp)" class="w-full bg-[#121212] border border-[#2F2F2F] rounded-xl px-3 py-2 text-xs text-white">
-                                <input type="text" id="cat-foto" required placeholder="URL Foto Produk" class="w-full bg-[#121212] border border-[#2F2F2F] rounded-xl px-3 py-2 text-xs text-white">
-                                <button type="submit" class="w-full bg-tiktok-pink text-white font-bold text-xs py-2.5 rounded-xl">Tambah ke Katalog</button>
-                            </form>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-3 text-center"><span class="text-[10px] text-gray-400 block">Hadir Hari Ini</span><h4 class="text-lg font-bold text-tiktok-cyan mt-1">${todayCnt}</h4></div>
+                            <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-3 text-center"><span class="text-[10px] text-gray-400 block">Total Clock In</span><h4 class="text-lg font-bold text-white mt-1">${att.length}</h4></div>
+                        </div>
+                        <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-2xl p-3">
+                            <h4 class="font-bold text-xs text-white mb-2">Rekap Otomatis per Member</h4>
+                            <table class="w-full text-[11px] text-gray-300">
+                                <tr class="text-gray-500 text-left"><th class="pb-1">Member</th><th>Hari Hadir</th><th>Terakhir</th></tr>
+                                ${Object.values(recap).map(r => `<tr class="border-t border-[#2F2F2F]"><td class="py-1.5 text-white">${r.nama} <span class="text-gray-500">@${r.username}</span></td><td>${r.days}</td><td>${new Date(r.last).toLocaleDateString('id-ID')}</td></tr>`).join('') || '<tr><td colspan="3" class="py-3 text-center text-gray-500">Belum ada data.</td></tr>'}
+                            </table>
                         </div>
                         <div class="space-y-2">
-                            <h4 class="font-bold text-xs text-white">Daftar Produk Katalog</h4>
-                            ${window.catalogData.map(c => `
-                                <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-3 flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <img src="${c.fotoUrl}" class="w-10 h-10 object-cover rounded-lg">
-                                        <div>
-                                            <h5 class="font-bold text-xs text-white">${c.nama}</h5>
-                                            <p class="text-[10px] text-gray-400">Harga: ${window.formatRupiah(c.harga)} | Komisi: ${window.formatRupiah(c.komisi)}</p>
-                                        </div>
+                            <h4 class="font-bold text-xs text-white">Data Clock In Terbaru</h4>
+                            ${att.map(a => `
+                                <div class="bg-[#1E1E1E] border border-[#2F2F2F] rounded-xl p-3 flex items-center space-x-3">
+                                    <img src="${a.photo}" class="w-16 h-16 object-cover rounded-lg">
+                                    <div class="text-[11px] text-gray-300">
+                                        <p class="font-bold text-white text-xs">${a.nama} (@${a.username})</p>
+                                        <p>${new Date(a.date).toLocaleString('id-ID')}</p>
+                                        <a target="_blank" href="https://www.google.com/maps?q=${a.lat},${a.lng}" class="text-tiktok-cyan hover:underline"><i class="fa-solid fa-location-dot mr-1"></i>${Number(a.lat).toFixed(5)}, ${Number(a.lng).toFixed(5)}</a>
                                     </div>
-                                    <button onclick="deleteCatalog('${c.id}')" class="text-tiktok-pink text-xs px-2 py-1"><i class="fa-solid fa-trash"></i></button>
-                                </div>
-                            `).join('')}
+                                </div>`).join('') || '<p class="text-center text-gray-500 text-xs py-6">Belum ada Clock In.</p>'}
                         </div>
                     </div>
                 `;
-            } else if (adminSubTab === 'transactions') {
+} else if (adminSubTab === 'transactions') {
                 container.innerHTML = `
                     <div class="space-y-3">
                         <h4 class="font-bold text-xs text-white">Kelola Transaksi & Pembelian (Pending / Complete)</h4>
@@ -936,7 +1119,7 @@
                                         <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${t.status === 'Complete' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}">${t.status}</span>
                                     </div>
                                     <div class="flex justify-between items-center text-xs text-white">
-                                        <span>${t.productName}</span>
+                                        <span>${t.productName}${t.type === 'Drhopsip' ? `<br><span class="text-[10px] text-gray-400">${t.nama} | ${t.nohp} | ${t.alamat}<br>Komisi: ${window.formatRupiah(t.komisi)}</span>` : ''}</span>
                                         <span class="font-bold">${window.formatRupiah(t.amount)}</span>
                                     </div>
                                     ${t.status === 'Pending' ? `
@@ -1042,7 +1225,7 @@
                     });
 
                     // If it's a purchase, return capital + komisi to member balance
-                    if (tx.type === 'Pembelian Produk' && tx.userId) {
+                    if ((tx.type === 'Pembelian Produk' || tx.type === 'Drhopsip') && tx.userId) {
                         const member = window.membersData.find(m => m.id === tx.userId);
                         if (member) {
                             const refundAndCommission = Number(tx.amount) + Number(tx.komisi || 0);
